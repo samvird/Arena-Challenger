@@ -1,0 +1,16 @@
+{
+  "sprites": [
+    "player.png",
+    "echo.png",
+    "bumper.png",
+    "swarmer.png",
+    "charger.png",
+    "brute.png",
+    "boss.png",
+    "rare_boss.png",
+    "sword_iron_broadsword.png",
+    "sword_kinetic_rapier.png",
+    "sword_bumper_claymore.png",
+    "sword_solaris_greatsword.png"
+  ]
+}

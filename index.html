@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bounce Back — 3D Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Rubik:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Studio backdrop visible in Lobby mode behind transparent WebGL canvas -->
+  <div id="lobby-backdrop" class="lobby-backdrop">
+    <div class="beam beam-1"></div>
+    <div class="beam beam-2"></div>
+    <div class="beam beam-3"></div>
+    <div class="floor-glow"></div>
+  </div>
+
+  <!-- Subtle tactile film-grain texture -->
+  <div class="film-grain" aria-hidden="true"></div>
+
+  <div id="game-container"></div>
+  <div id="yt-music-player" style="position:fixed;width:1px;height:1px;opacity:0.001;pointer-events:none;bottom:0;right:0;"></div>
+
+  <!-- In-Game HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="hud-left">
+        <div class="hud-tag">
+          <span class="tag-label">Wave</span>
+          <span id="wave-num" class="tag-value">1</span>
+        </div>
+        <div class="hud-tag">
+          <span class="tag-label">Score</span>
+          <span id="score-num" class="tag-value">0</span>
+        </div>
+        <div class="hud-tag sword-tag">
+          <span class="tag-label">Blade</span>
+          <span id="hud-sword-name" class="tag-value small">Iron Broadsword</span>
+        </div>
+      </div>
+
+      <div id="hud-hp-box" class="hud-center">
+        <div class="hp-header">
+          <span>INTEGRITY</span>
+          <span id="hp-text">100 / 100</span>
+        </div>
+        <div class="hp-bar-track">
+          <div id="hp-bar-fill" class="hp-bar-fill"></div>
+          <div class="hp-ticks" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <div class="ability-row">
+          <div class="ability-item">
+            <span>Dash [Shift]</span>
+            <div class="mini-track"><div id="dash-bar-fill" class="mini-fill dash"></div></div>
+          </div>
+          <div class="ability-item">
+            <span>Sky Slam [E]</span>
+            <div class="mini-track"><div id="slam-bar-fill" class="mini-fill slam"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="hud-tag accent-gold">
+          <span class="tag-label">Bounce Backs</span>
+          <span id="bounce-num" class="tag-value">0</span>
+        </div>
+        <div class="hud-tag accent-lime">
+          <span class="tag-label">Echo Squad</span>
+          <span id="echo-num" class="tag-value">0</span>
+        </div>
+        <button id="hud-music-btn" class="hud-menu-btn icon-only" title="Toggle Music" aria-label="Toggle Music">
+          <svg id="hud-music-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </button>
+        <button id="hud-menu-btn" class="hud-menu-btn">Menu [P]</button>
+      </div>
+    </div>
+
+    <div id="wave-banner" class="wave-banner hidden">
+      <div id="wave-banner-title">WAVE 1</div>
+      <div id="wave-banner-sub">Clear the Arena</div>
+    </div>
+
+    <div id="bounce-flash" class="bounce-flash hidden">
+      <div class="bounce-flash-text">BOUNCE BACK!</div>
+      <div class="bounce-flash-sub">Echo Ally Deployed</div>
+    </div>
+
+    <div class="controls-strip">
+      <span><b>WASD</b> Move</span>
+      <span><b>Mouse</b> Aim</span>
+      <span><b>Click / J</b> Slash</span>
+      <span><b>Space</b> Jump</span>
+      <span><b>Shift</b> Dash</span>
+      <span><b>E</b> Sky Slam</span>
+      <span><b>P / Esc</b> Menu</span>
+    </div>
+  </div>
+
+  <!-- 3D Character Lobby Screen -->
+  <div id="start-screen" class="lobby-screen">
+    <div class="lobby-topbar">
+      <div class="profile-box">
+        <div class="profile-avatar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path>
+            <path d="M13 19l6-6"></path>
+            <path d="M16 16l4 4"></path>
+            <path d="M19 21l2-2"></path>
+          </svg>
+        </div>
+        <div class="profile-meta">
+          <div class="profile-name">Arena Challenger</div>
+          <div id="lobby-best-stats" class="profile-sub">Best Wave: 1 • High Score: 0</div>
+        </div>
+      </div>
+
+      <div class="lobby-top-icons">
+        <button id="top-music-btn" class="icon-tile" title="Toggle Music" aria-label="Toggle Music">
+          <svg id="top-music-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+        </button>
+        <button id="top-saves-btn" class="icon-tile" title="Saved Runs" aria-label="Saved Runs">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          <small id="top-saves-count">0</small>
+        </button>
+        <button id="top-fullscreen-btn" class="icon-tile" title="Fullscreen" aria-label="Fullscreen">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Left Side Navigation & Loadout Box -->
+    <div class="lobby-left">
+      <div class="lobby-info-box">
+        <div class="info-logo">BOUNCE <span>BACK</span></div>
+        <p class="info-desc">
+          Fall in battle to trigger a shockwave, spawn a <b>Past-Life Echo</b>, and fight your way back.
+        </p>
+        <div class="equipped-preview">
+          <div class="eq-label">Selected Sword</div>
+          <div id="lobby-sword-title" class="eq-name">Iron Broadsword</div>
+          <div id="lobby-sword-stats" class="eq-stats">100% Damage • 3.4m Reach • 100% Speed</div>
+        </div>
+      </div>
+
+      <div class="lobby-nav-tiles">
+        <button id="start-armory-btn" class="tile-btn tile-amber">
+          <div class="tile-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path>
+              <path d="M13 19l6-6"></path>
+              <path d="M16 16l4 4"></path>
+            </svg>
+          </div>
+          <div class="tile-label">Armory</div>
+        </button>
+        <button id="start-saves-btn" class="tile-btn tile-slate">
+          <div class="tile-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <div class="tile-label">Saves</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Character Drag Hint -->
+    <div class="character-stage-label">
+      <span>Drag to rotate</span>
+    </div>
+
+    <!-- Right Side Vertical Blade Rack -->
+    <div class="lobby-right">
+      <div class="blade-rack-header">
+        <div class="rack-title">BLADE LOCKER</div>
+        <div class="rack-sub">Click to equip</div>
+      </div>
+      <div id="lobby-sword-rack" class="blade-rack-list"></div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="lobby-bottom">
+      <div class="lobby-badge-pass">
+        <div class="pass-inner">
+          <span>INFINITE</span>
+          <strong>REVIVES</strong>
+        </div>
+      </div>
+
+      <div class="play-cluster">
+        <div class="mode-selector">
+          <div class="mode-top">
+            <span>Solo Arena</span>
+          </div>
+          <div class="mode-bottom">
+            <div class="picked-label">Picked Sword</div>
+            <div id="mode-sword-label" class="picked-val">Iron Broadsword</div>
+          </div>
+        </div>
+
+        <button id="start-btn" class="big-play-btn">PLAY!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Game Pause / Save / Armory Modal -->
+  <div id="pause-screen" class="overlay hidden">
+    <div class="panel pause-panel">
+      <div class="panel-header">
+        <div>
+          <div class="kicker">Arena System</div>
+          <h2 class="panel-title">LOCKER &amp; SAVES</h2>
+        </div>
+        <div class="tab-bar">
+          <button id="tab-system-btn" class="tab-btn active">Match</button>
+          <button id="tab-saves-btn" class="tab-btn">Saved Runs</button>
+          <button id="tab-armory-btn" class="tab-btn">Armory</button>
+        </div>
+      </div>
+
+      <div id="tab-system" class="tab-content">
+        <div id="pause-stats-strip" class="stats-strip"></div>
+
+        <div class="menu-grid">
+          <button id="resume-btn" class="btn btn-primary">Resume Fight</button>
+          <button id="save-btn" class="btn btn-secondary">Save Current Run</button>
+          <button id="open-saves-btn" class="btn btn-outline">View Saved Runs</button>
+          <button id="restart-btn" class="btn btn-danger">Restart Run</button>
+          <button id="main-menu-btn" class="btn btn-outline" style="grid-column: 1 / -1;">Return to Main Lobby</button>
+        </div>
+        <div id="save-status" class="save-status"></div>
+      </div>
+
+      <div id="tab-saves" class="tab-content hidden">
+        <div id="saves-list" class="saves-list"></div>
+        <div class="saves-footer">
+          <div class="saves-footer-left">
+            <button id="saves-new-save-btn" class="btn btn-primary">Save Current Run</button>
+            <button id="clear-saves-btn" class="btn btn-danger">Clear All Saves</button>
+          </div>
+          <button id="saves-back-btn" class="btn btn-outline">Back</button>
+        </div>
+      </div>
+
+      <div id="tab-armory" class="tab-content hidden">
+        <div id="armory-grid" class="armory-grid"></div>
+        <div class="armory-footer">
+          <button id="armory-back-btn" class="btn btn-outline">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bounce Back Perk Selection -->
+  <div id="perk-screen" class="overlay hidden">
+    <div class="panel perk-panel">
+      <div class="kicker gold">Bounce Back Triggered</div>
+      <h2 class="panel-title">PICK YOUR POWER-UP</h2>
+      <div id="perk-cards" class="perk-cards"></div>
+      <div class="hint-line">Click a card or press <b>1</b>, <b>2</b>, or <b>3</b></div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
