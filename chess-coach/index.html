@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Grandmaster Review — Unlimited Chess Analysis &amp; Coach</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "chess.js": "https://cdn.jsdelivr.net/npm/chess.js@1.0.0-beta.8/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">♞</div>
+        <div>
+          <h1 class="brand-title">Grandmaster Review</h1>
+          <div id="opening-badge" class="opening-badge">Starting Position</div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <div id="engine-status" class="engine-pill">
+          <span class="dot"></span>
+          <span id="engine-status-text">Stockfish Ready</span>
+        </div>
+
+        <select id="depth-select" class="depth-select" aria-label="Engine Depth">
+          <option value="10">Fast (Depth 10)</option>
+          <option value="13" selected>Standard (Depth 13)</option>
+          <option value="16">Deep (Depth 16)</option>
+        </select>
+
+        <button id="open-import-btn" class="primary-btn" type="button">
+          + Load / Import Game
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Left: Eval Bar + Board + Playback Controls -->
+      <section class="board-column">
+        <!-- Top Player Bar -->
+        <div class="player-bar">
+          <div class="player-id">
+            <span id="top-color-dot" class="color-dot black"></span>
+            <span id="top-player-name" class="player-name">Black Player</span>
+            <span id="top-player-elo" class="player-elo"></span>
+          </div>
+          <div class="player-right">
+            <span id="top-Accuracy" class="acc-pill">Acc: --%</span>
+          </div>
+        </div>
+
+        <!-- Board & Eval Bar Row -->
+        <div class="board-stage">
+          <div class="eval-bar-wrap" title="Stockfish Evaluation">
+            <div id="eval-bar-fill" class="eval-bar-fill" style="height: 50%"></div>
+            <span id="eval-bar-text" class="eval-bar-text">0.0</span>
+          </div>
+
+          <div class="board-outer">
+            <div id="board" class="board"></div>
+            <svg id="arrows-svg" class="arrows-svg" viewBox="0 0 800 800" preserveAspectRatio="none"></svg>
+            <div id="badge-layer" class="badge-layer"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Player Bar -->
+        <div class="player-bar">
+          <div class="player-id">
+            <span id="bottom-color-dot" class="color-dot white"></span>
+            <span id="bottom-player-name" class="player-name">White Player</span>
+            <span id="bottom-player-elo" class="player-elo"></span>
+          </div>
+          <div class="player-right">
+            <span id="bottom-Accuracy" class="acc-pill">Acc: --%</span>
+          </div>
+        </div>
+
+        <!-- Transport & Interactive Buttons -->
+        <div class="controls-bar">
+          <div class="nav-group">
+            <button id="btn-first" class="ctrl-btn" type="button" title="First Move (Home)">⏮</button>
+            <button id="btn-prev" class="ctrl-btn" type="button" title="Previous Move (←)">◀</button>
+            <button id="btn-next" class="ctrl-btn" type="button" title="Next Move (→)">▶</button>
+            <button id="btn-last" class="ctrl-btn" type="button" title="Last Move (End)">⏭</button>
+            <button id="btn-flip" class="ctrl-btn" type="button" title="Flip Board (F)">⇅ Flip</button>
+          </div>
+
+          <div class="action-group">
+            <button id="btn-next-mistake" class="ctrl-btn accent-warn" type="button">Next Mistake ??</button>
+            <button id="btn-retry" class="ctrl-btn accent-gold" type="button">Retry Move ★</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Coach Feedback, Eval Graph, Report Card & Q&A -->
+      <section class="analysis-column">
+        <!-- Analysis Progress Bar (shown while analyzing full game) -->
+        <div id="analysis-progress-box" class="progress-box hidden">
+          <div class="progress-row">
+            <span id="analysis-progress-label">Analyzing game with Stockfish...</span>
+            <span id="analysis-progress-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="analysis-progress-fill" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Coach Move Breakdown Card -->
+        <div id="coach-card" class="coach-card">
+          <div class="coach-header">
+            <div class="coach-move-row">
+              <span id="coach-badge" class="cls-badge book">BOOK</span>
+              <h2 id="coach-move-title" class="coach-move-title">Game Ready</h2>
+            </div>
+            <div id="coach-eval-shift" class="coach-eval-shift">0.00</div>
+          </div>
+
+          <p id="coach-headline" class="coach-headline">
+            Import a game from Chess.com, Lichess, or PGN—or step through the loaded game—to get unlimited move-by-move coaching.
+          </p>
+
+          <!-- Best Move vs Played Move Pill Row -->
+          <div id="coach-comparison" class="coach-comparison hidden">
+            <div class="comp-box played">
+              <span class="comp-label">PLAYED</span>
+              <strong id="comp-played-move">--</strong>
+            </div>
+            <div class="comp-arrow">→</div>
+            <div class="comp-box best">
+              <span class="comp-label">ENGINE BEST</span>
+              <strong id="comp-best-move">--</strong>
+            </div>
+            <button id="btn-show-line" class="line-btn" type="button">Preview Best Line</button>
+          </div>
+
+          <!-- Deep Multi-Layer Feedback Accordion (Always expandable for unlimited detail) -->
+          <div id="coach-deep-box" class="coach-deep-box">
+            <div class="deep-grid">
+              <div class="deep-item">
+                <div class="deep-label">1. TACTICAL &amp; MATERIAL BREAKDOWN</div>
+                <div id="deep-tactical" class="deep-text">Step to any move to inspect hanging pieces, forks, pins, and material balance.</div>
+              </div>
+              <div class="deep-item">
+                <div class="deep-label">2. ENGINE CONTINUATION (WHAT HAPPENS NEXT)</div>
+                <div id="deep-pv" class="deep-text mono">--</div>
+              </div>
+              <div class="deep-item">
+                <div class="deep-label">3. POSITIONAL &amp; KING SAFETY</div>
+                <div id="deep-positional" class="deep-text">--</div>
+              </div>
+              <div class="deep-item">
+                <div class="deep-label">4. COACH'S TAKEAWAY RULE</div>
+                <div id="deep-takeaway" class="deep-text highlight">--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evaluation Timeline Graph -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span>EVALUATION TIMELINE (Click graph to jump)</span>
+            <span id="chart-phase-label" class="chart-phase">Opening</span>
+          </div>
+          <canvas id="eval-chart" width="600" height="96"></canvas>
+        </div>
+
+        <!-- Lower Tabs: Report Card | Move List | Ask Coach Q&A -->
+        <div class="panel-tabs">
+          <button class="ptab active" data-ptab="report" type="button">Report Card</button>
+          <button class="ptab" data-ptab="moves" type="button">Moves List</button>
+          <button class="ptab" data-ptab="ask" type="button">Ask Coach Q&amp;A</button>
+        </div>
+
+        <div class="panel-content">
+          <!-- Tab 1: Report Card -->
+          <div id="ptab-report" class="ptab-pane">
+            <div class="accuracy-hero">
+              <div class="acc-card white-acc">
+                <span class="acc-title" id="rep-white-name">White</span>
+                <strong class="acc-big" id="rep-white-acc">--%</strong>
+                <small id="rep-white-cpl">Avg Centipawn Loss: --</small>
+              </div>
+              <div class="acc-card black-acc">
+                <span class="acc-title" id="rep-black-name">Black</span>
+                <strong class="acc-big" id="rep-black-acc">--%</strong>
+                <small id="rep-black-cpl">Avg Centipawn Loss: --</small>
+              </div>
+            </div>
+
+            <div id="classification-table" class="cls-table"></div>
+
+            <div class="study-plan-box">
+              <div class="study-title">COACH'S PERSONALIZED ACTION PLAN</div>
+              <ul id="study-plan-list" class="study-list">
+                <li>Run analysis on a game to generate your personalized study plan.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Tab 2: Move List -->
+          <div id="ptab-moves" class="ptab-pane hidden">
+            <div id="moves-list" class="moves-list"></div>
+          </div>
+
+          <!-- Tab 3: Ask Coach Unlimited Q&A -->
+          <div id="ptab-ask" class="ptab-pane hidden">
+            <div class="ask-quick-chips">
+              <button class="q-chip" data-q="why" type="button">Why was my move bad/good?</button>
+              <button class="q-chip" data-q="threat" type="button">What is the opponent threatening?</button>
+              <button class="q-chip" data-q="hanging" type="button">Are any pieces undefended?</button>
+              <button class="q-chip" data-q="plan" type="button">What should my plan be here?</button>
+              <button class="q-chip" data-q="alternatives" type="button">What are the top 3 candidate moves?</button>
+            </div>
+
+            <div class="ask-input-row">
+              <input id="ask-input" type="text" placeholder="Ask anything about this position (e.g. 'Should I castle?', 'Why not takes?')" />
+              <button id="ask-send-btn" class="primary-btn" type="button">Ask</button>
+            </div>
+
+            <div id="ask-log" class="ask-log"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Import / Load Game Modal -->
+  <div id="import-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Load or Import Chess Game</h2>
+        <button id="close-import-btn" class="icon-close" type="button">✕</button>
+      </div>
+
+      <div class="import-tabs">
+        <button class="itab active" data-itab="chesscom" type="button">Chess.com</button>
+        <button class="itab" data-itab="lichess" type="button">Lichess</button>
+        <button class="itab" data-itab="pgn" type="button">Paste PGN / FEN</button>
+        <button class="itab" data-itab="samples" type="button">Sample Games</button>
+      </div>
+
+      <!-- Chess.com Tab -->
+      <div id="itab-chesscom" class="itab-pane">
+        <p class="modal-sub">Enter any Chess.com username to fetch their recent games directly:</p>
+        <div class="fetch-row">
+          <input id="chesscom-user" type="text" placeholder="e.g. Hikaru, MagnusCarlsen, or your username" />
+          <button id="fetch-chesscom-btn" class="primary-btn" type="button">Fetch Games</button>
+        </div>
+        <div id="chesscom-results" class="fetched-games-list"></div>
+      </div>
+
+      <!-- Lichess Tab -->
+      <div id="itab-lichess" class="itab-pane hidden">
+        <p class="modal-sub">Enter any Lichess.org username to fetch their recent games:</p>
+        <div class="fetch-row">
+          <input id="lichess-user" type="text" placeholder="e.g. DrNykterstein or your Lichess username" />
+          <button id="fetch-lichess-btn" class="primary-btn" type="button">Fetch Games</button>
+        </div>
+        <div id="lichess-results" class="fetched-games-list"></div>
+      </div>
+
+      <!-- Paste PGN / FEN Tab -->
+      <div id="itab-pgn" class="itab-pane hidden">
+        <p class="modal-sub">Paste any full PGN game text (or a single FEN position):</p>
+        <textarea id="pgn-textarea" rows="7" placeholder="1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 ..."></textarea>
+        <div class="perspective-row">
+          <label>Analyze from perspective:</label>
+          <select id="pgn-color-select">
+            <option value="w">White</option>
+            <option value="b">Black</option>
+          </select>
+        </div>
+        <button id="load-pgn-btn" class="primary-btn full-w" type="button">Analyze PGN</button>
+      </div>
+
+      <!-- Sample Games Tab -->
+      <div id="itab-samples" class="itab-pane hidden">
+        <p class="modal-sub">Test the analyzer immediately with one of these instructive games:</p>
+        <div id="sample-games-list" class="fetched-games-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
