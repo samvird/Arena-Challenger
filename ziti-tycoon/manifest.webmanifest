@@ -1,0 +1,16 @@
+{
+  "name": "Ziti & Glizzy Tycoon",
+  "short_name": "Ziti Tycoon",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a0e0a",
+  "theme_color": "#b91c1c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/eater_idle.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#b91c1c" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>Ziti &amp; Glizzy Tycoon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <!-- Top Diner Scoreboard -->
+    <header class="top-bar">
+      <div class="stat-pill weight-pill">
+        <span class="pill-label">TOTAL WEIGHT</span>
+        <span id="weight-display" class="pill-value">160 lbs</span>
+        <span id="rate-display" class="pill-sub">+0.0 lbs/sec</span>
+      </div>
+
+      <div class="stat-pill cash-pill">
+        <span class="pill-label">FOOD CASH</span>
+        <span id="cash-display" class="pill-value">$0</span>
+        <span id="tap-display" class="pill-sub">$1 / bite</span>
+      </div>
+
+      <button id="sound-btn" class="icon-btn" aria-label="Toggle Sound" title="Toggle Sound">
+        <svg id="sound-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Size Tier Progress Strip -->
+    <section class="tier-strip">
+      <div class="tier-row">
+        <span id="tier-name" class="tier-name">LVL 1 • SKINNY SNACKER</span>
+        <span id="tier-next" class="tier-next">Next: 350 lbs</span>
+      </div>
+      <div class="tier-track">
+        <div id="tier-fill" class="tier-fill"></div>
+      </div>
+    </section>
+
+    <!-- Main Interactive Feeding Stage -->
+    <main id="stage" class="stage">
+      <div class="checkered-awning" aria-hidden="true"></div>
+
+      <!-- Craving Mini-Mission Pill -->
+      <div id="craving-bar" class="craving-bar">
+        <div class="craving-top">
+          <span id="craving-text">CRAVING: 15 BITES</span>
+          <span id="craving-reward" class="craving-reward">+$60</span>
+        </div>
+        <div class="craving-track">
+          <div id="craving-fill" class="craving-fill"></div>
+        </div>
+      </div>
+
+      <!-- Overdrive / Muscle Mode Banner -->
+      <div id="overdrive-banner" class="overdrive-banner hidden">
+        <img src="assets/celsius.jpg" alt="Celsius" class="overdrive-thumb" />
+        <div>
+          <div class="overdrive-title">MUSCLE OVERDRIVE!</div>
+          <div id="overdrive-timer" class="overdrive-sub">4x BITES • 12.0s</div>
+        </div>
+      </div>
+
+      <!-- Combo Hype Meter -->
+      <div class="combo-wrap">
+        <div class="combo-label">
+          <span id="combo-mult">x1.0</span>
+          <span>FEAST STREAK</span>
+        </div>
+        <div class="combo-track">
+          <div id="combo-fill" class="combo-fill"></div>
+        </div>
+      </div>
+
+      <!-- Active Crew Mini-Avatars -->
+      <div id="crew-stage" class="crew-stage" aria-hidden="true"></div>
+
+      <!-- Main Character with Photo Head + Growing Fat/Muscle Fake Body -->
+      <button id="eater-btn" class="eater-btn" type="button" aria-label="Tap to feed">
+        <div id="eater-aura" class="eater-aura"></div>
+
+        <div id="eater-quip" class="eater-quip">Feed me ziti!</div>
+
+        <div id="character-rig" class="character-rig">
+          <div id="head-wrap" class="head-wrap">
+            <img id="eater-img" src="assets/eater_idle.jpg" alt="The Eater" draggable="false" />
+          </div>
+
+          <svg id="fake-body-svg" class="fake-body-svg" viewBox="0 0 240 165" aria-hidden="true">
+            <!-- Legs / Jeans -->
+            <rect x="86" y="118" width="24" height="38" rx="10" fill="#1e3a8a" stroke="#0f172a" stroke-width="3" />
+            <rect x="130" y="118" width="24" height="38" rx="10" fill="#1e3a8a" stroke="#0f172a" stroke-width="3" />
+            <!-- Shoes -->
+            <ellipse cx="96" cy="156" rx="16" ry="7" fill="#f8fafc" stroke="#0f172a" stroke-width="3" />
+            <ellipse cx="144" cy="156" rx="16" ry="7" fill="#f8fafc" stroke="#0f172a" stroke-width="3" />
+
+            <!-- NORMAL / FAT BODY GROUP -->
+            <g id="fat-body-group">
+              <!-- Left & Right Arms -->
+              <path id="fat-arm-l" d="M 78 26 Q 42 52 56 82" fill="none" stroke="#f1c29b" stroke-width="18" stroke-linecap="round" />
+              <path id="fat-arm-r" d="M 162 26 Q 198 52 184 82" fill="none" stroke="#f1c29b" stroke-width="18" stroke-linecap="round" />
+              <!-- T-Shirt Torso / Growing Belly -->
+              <ellipse id="fat-torso" cx="120" cy="70" rx="44" ry="52" fill="#27272a" stroke="#09090b" stroke-width="4" />
+              <ellipse id="fat-belly" cx="120" cy="82" rx="34" ry="34" fill="#3f3f46" opacity="0.65" />
+              <!-- Shirt Text -->
+              <text x="120" y="64" text-anchor="middle" fill="#fbbf24" font-family="Fredoka, sans-serif" font-size="13" font-weight="700">ZITI</text>
+              <text x="120" y="79" text-anchor="middle" fill="#fff8eb" font-family="Fredoka, sans-serif" font-size="11" font-weight="700">KING</text>
+              <!-- Snack in hand -->
+              <text x="184" y="88" text-anchor="middle" font-size="22">🌭</text>
+            </g>
+
+            <!-- MUSCLE / BUFF POWERUP BODY GROUP -->
+            <g id="buff-body-group" class="hidden">
+              <!-- Flexing Giant Arms -->
+              <path d="M 70 28 C 28 24, 24 68, 52 72 C 62 72, 64 52, 54 44" fill="none" stroke="#f1c29b" stroke-width="22" stroke-linecap="round" />
+              <path d="M 170 28 C 212 24, 216 68, 188 72 C 178 72, 176 52, 186 44" fill="none" stroke="#f1c29b" stroke-width="22" stroke-linecap="round" />
+              <!-- V-Taper Shredded Torso -->
+              <path d="M 66 20 L 174 20 L 152 120 L 88 120 Z" fill="#e5a97c" stroke="#7c2d12" stroke-width="4" stroke-linejoin="round" />
+              <!-- Tank Top -->
+              <path d="M 86 20 L 154 20 L 146 118 L 94 118 Z" fill="#be123c" stroke="#881337" stroke-width="3" />
+              <!-- Pecs & 6-Pack Abs -->
+              <path d="M 88 46 Q 104 56 120 46 Q 136 56 152 46" fill="none" stroke="#7c2d12" stroke-width="3" />
+              <line x1="120" y1="54" x2="120" y2="106" stroke="#7c2d12" stroke-width="2.5" opacity="0.55" />
+              <line x1="104" y1="70" x2="136" y2="70" stroke="#7c2d12" stroke-width="2.5" opacity="0.55" />
+              <line x1="104" y1="86" x2="136" y2="86" stroke="#7c2d12" stroke-width="2.5" opacity="0.55" />
+              <text x="120" y="42" text-anchor="middle" fill="#fde047" font-family="Fredoka, sans-serif" font-size="12" font-weight="700">CELSIUS</text>
+            </g>
+          </svg>
+        </div>
+
+        <div id="plate-badge" class="plate-badge">
+          <span id="plate-icon">🌭</span>
+          <span id="plate-name">Cafeteria Glizzy</span>
+        </div>
+      </button>
+
+      <!-- Floating Bonus Layer -->
+      <div id="bonus-layer" class="bonus-layer"></div>
+      <!-- Floating Popups Layer -->
+      <div id="fx-layer" class="fx-layer"></div>
+    </main>
+
+    <!-- Bottom Tycoon Shop Drawer -->
+    <section class="shop-panel">
+      <nav class="shop-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="food" type="button">MENU</button>
+        <button class="tab-btn" data-tab="crew" type="button">CREW</button>
+        <button class="tab-btn" data-tab="boosts" type="button">BOOSTS</button>
+        <button class="tab-btn" data-tab="prestige" type="button">BULK ★</button>
+      </nav>
+
+      <div id="shop-list" class="shop-list"></div>
+    </section>
+  </div>
+
+  <!-- Offline Earnings Modal -->
+  <div id="offline-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-eyebrow">WHILE YOU WERE GONE</div>
+      <h2 class="modal-title">YOUR CREW KEPT FEEDING!</h2>
+      <p id="offline-summary" class="modal-desc"></p>
+      <button id="offline-claim-btn" class="primary-btn" type="button">COLLECT GAINS</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/game.js"></script>
+</body>
+</html>
