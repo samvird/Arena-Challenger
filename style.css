@@ -1292,11 +1292,103 @@ body.touch-mode .controls-strip {
   }
 
   .lobby-screen {
-    padding: 12px;
+    padding: 10px 12px;
   }
 
-  .lobby-sword-rack {
-    max-height: 46vh;
+  .lobby-left {
+    left: 12px;
+    top: 62px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .lobby-info-box {
+    width: 215px;
+    padding: 10px 12px;
+  }
+
+  .info-logo {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .info-desc {
+    display: none;
+  }
+
+  .equipped-preview {
+    padding: 6px 8px;
+  }
+
+  .eq-name {
+    font-size: 15px;
+  }
+
+  .eq-stats {
+    font-size: 11px;
+  }
+
+  .lobby-nav-tiles {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .tile-btn {
+    width: 96px;
+    height: 48px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .lobby-right {
+    right: 12px;
+    top: 62px;
+    width: 150px;
+    padding: 8px;
+  }
+
+  .blade-rack-list {
+    max-height: 145px;
     overflow-y: auto;
+  }
+
+  .lobby-badge-pass {
+    display: none;
+  }
+
+  .lobby-bottom {
+    justify-content: flex-end;
+    padding-right: 36px;
+  }
+
+  .play-cluster {
+    gap: 8px;
+  }
+
+  .mode-selector {
+    width: 145px;
+  }
+
+  .mode-top {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .mode-bottom {
+    padding: 5px 10px;
+  }
+
+  .picked-val {
+    font-size: 14px;
+  }
+
+  .big-play-btn {
+    width: 145px;
+    font-size: 28px;
+    border-bottom-width: 4px;
   }
 }
