@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Bounce Back — 3D Arena</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -110,6 +110,21 @@
       <span><b>Shift</b> Dash</span>
       <span><b>E</b> Sky Slam</span>
       <span><b>P / Esc</b> Menu</span>
+    </div>
+
+    <!-- Mobile Touch Controls (auto-shown on touch devices) -->
+    <div id="mobile-controls" class="mobile-controls" aria-hidden="true">
+      <div id="touch-joystick" class="touch-joystick">
+        <div class="touch-joystick-ring"></div>
+        <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
+      </div>
+
+      <div id="touch-actions" class="touch-actions">
+        <button id="touch-slam-btn" class="touch-btn slam" type="button">SLAM</button>
+        <button id="touch-dash-btn" class="touch-btn dash" type="button">DASH</button>
+        <button id="touch-jump-btn" class="touch-btn jump" type="button">JUMP</button>
+        <button id="touch-slash-btn" class="touch-btn slash" type="button">SLASH</button>
+      </div>
     </div>
   </div>
 

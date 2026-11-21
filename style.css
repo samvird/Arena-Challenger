@@ -27,6 +27,9 @@ html, body {
   background: var(--slate);
   font-family: var(--font-ui);
   color: var(--chalk);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
 }
 
 /* Crisp Studio Backdrop for 3D Lobby */
@@ -1137,4 +1140,163 @@ html, body {
   25% { transform: skewX(-8deg) translateX(-5px); }
   50% { transform: skewX(-8deg) translateX(5px); }
   75% { transform: skewX(-8deg) translateX(-3px); }
+}
+
+/* Mobile Touch Controls */
+.mobile-controls {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  pointer-events: none;
+}
+
+body.touch-mode .mobile-controls {
+  display: block;
+}
+
+body.touch-mode .controls-strip {
+  display: none;
+}
+
+.touch-joystick {
+  position: fixed;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 128px;
+  height: 128px;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-joystick-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(15, 28, 46, 0.55);
+  border: 2px solid rgba(247, 245, 240, 0.28);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.45);
+}
+
+.touch-joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin-left: -27px;
+  margin-top: -27px;
+  border-radius: 50%;
+  background: rgba(255, 198, 26, 0.88);
+  border: 2px solid #fff8dc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  transition: transform 0.04s linear;
+}
+
+.touch-actions {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 186px;
+  height: 176px;
+  pointer-events: none;
+}
+
+.touch-btn {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  border-radius: 50%;
+  border: 2px solid rgba(247, 245, 240, 0.45);
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--chalk);
+  background: rgba(22, 41, 66, 0.78);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.touch-btn:active {
+  transform: scale(0.92);
+}
+
+.touch-btn.slash {
+  right: 0;
+  bottom: 0;
+  width: 84px;
+  height: 84px;
+  font-size: 16px;
+  background: linear-gradient(145deg, #ffc61a, #d49b00);
+  color: #0f1c2e;
+  border-color: #fff3c4;
+}
+
+.touch-btn.jump {
+  right: 98px;
+  bottom: 6px;
+  width: 64px;
+  height: 64px;
+  font-size: 13px;
+  background: rgba(42, 133, 222, 0.85);
+}
+
+.touch-btn.dash {
+  right: 88px;
+  bottom: 84px;
+  width: 60px;
+  height: 60px;
+  font-size: 12px;
+  background: rgba(22, 101, 184, 0.85);
+}
+
+.touch-btn.slam {
+  right: 6px;
+  bottom: 98px;
+  width: 64px;
+  height: 64px;
+  font-size: 12px;
+  background: rgba(230, 57, 70, 0.88);
+}
+
+/* Responsive adjustments for mobile viewports */
+@media (max-width: 900px), (max-height: 540px) {
+  .hud-top {
+    padding: 8px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hud-tag {
+    padding: 4px 9px;
+  }
+
+  .tag-value {
+    font-size: 16px;
+  }
+
+  .hud-center {
+    min-width: 170px;
+    max-width: 240px;
+    order: 3;
+    flex: 1 1 100%;
+    margin: 0 auto;
+  }
+
+  .perk-cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .lobby-screen {
+    padding: 12px;
+  }
+
+  .lobby-sword-rack {
+    max-height: 46vh;
+    overflow-y: auto;
+  }
 }
