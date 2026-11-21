@@ -514,11 +514,28 @@ class Game {
       sfx.uiClick();
       this.openPauseMenu('MENU', 'armory');
     });
-    document.getElementById('top-fullscreen-btn').addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.();
-      } else {
-        document.exitFullscreen?.();
+    const fsBtn = document.getElementById('top-fullscreen-btn');
+    const docEl = document.documentElement;
+    const canFullscreen = !!(
+      docEl.requestFullscreen ||
+      docEl.webkitRequestFullscreen
+    );
+    if (!canFullscreen && this.isTouchDevice) {
+      // iOS Safari blocks element Fullscreen API; hide the dead button
+      fsBtn.classList.add('hidden');
+    }
+    fsBtn.addEventListener('click', async () => {
+      try {
+        const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+        if (!fsEl) {
+          if (docEl.requestFullscreen) await docEl.requestFullscreen();
+          else if (docEl.webkitRequestFullscreen) await docEl.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+        }
+      } catch {
+        // Ignore if blocked by iframe/browser policy
       }
     });
 
