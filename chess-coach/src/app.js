@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import { PIECE_SVGS, detectOpening, SAMPLE_GAMES } from './pieces.js';
+import { PIECE_SVGS, detectOpening, SAMPLE_GAMES, OPENING_DRILLS } from './pieces.js';
 import {
   StockfishEngine,
   formatEval,
@@ -27,8 +27,16 @@ class ChessCoachApp {
     this.headers = { White: 'White Player', Black: 'Black Player', WhiteElo: '', BlackElo: '' };
     this.opening = { name: 'Starting Position', bookPly: 0 };
 
+    // Opening Trainer vs AI state
+    this.trainerActive = false;
+    this.trainerDrill = OPENING_DRILLS[0];
+    this.trainerMode = 'guided'; // 'guided' or 'free'
+    this.trainerHintUci = null;
+    this.aiThinking = false;
+
     this.bindUI();
     this.populateSamples();
+    this.populateTrainerOpenings();
     // Auto-load Sample Game 1 so the user can explore immediately
     this.loadPgnGame(SAMPLE_GAMES[0].pgn);
   }
@@ -68,14 +76,28 @@ class ChessCoachApp {
     // Lower Panel Tabs
     document.querySelectorAll('.ptab').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.ptab').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        const tab = btn.dataset.ptab;
-        ['report', 'moves', 'ask'].forEach((id) => {
-          document.getElementById(`ptab-${id}`).classList.toggle('hidden', id !== tab);
-        });
+        this.switchPanelTab(btn.dataset.ptab);
       });
     });
+
+    document.getElementById('open-trainer-btn').addEventListener('click', () => {
+      this.switchPanelTab('trainer');
+      this.startOpeningTrainer();
+    });
+
+    document.getElementById('trainer-opening-select').addEventListener('change', (e) => {
+      const drill = OPENING_DRILLS.find((d) => d.id === e.target.value) || OPENING_DRILLS[0];
+      this.trainerDrill = drill;
+      this.renderTrainerCard();
+    });
+
+    document.getElementById('trainer-mode-select').addEventListener('change', (e) => {
+      this.trainerMode = e.target.value;
+    });
+
+    document.getElementById('trainer-start-btn').addEventListener('click', () => this.startOpeningTrainer());
+    document.getElementById('trainer-hint-btn').addEventListener('click', () => this.showTrainerBookHint());
+    document.getElementById('trainer-undo-btn').addEventListener('click', () => this.undoTrainerMove());
 
     // Eval Chart Click to Jump
     const chart = document.getElementById('eval-chart');
@@ -320,6 +342,8 @@ class ChessCoachApp {
 
     this.currentPly = 0;
     this.retryMode = false;
+    this.trainerActive = false;
+    this.trainerHintUci = null;
     this.updatePlayerBars();
     this.renderMovesList();
     this.goToPly(0);
@@ -486,11 +510,22 @@ class ChessCoachApp {
   }
 
   onSquareClick(sqName, chess) {
+    if (this.aiThinking) return;
+
     if (this.selectedSquare && this.selectedSquare !== sqName) {
       const legal = chess.moves({ square: this.selectedSquare, verbose: true });
       const match = legal.find((m) => m.to === sqName);
       if (match) {
         const uci = `${match.from}${match.to}${match.promotion || ''}`;
+
+        // 1. Opening Trainer vs AI Mode
+        if (this.trainerActive && this.currentPly === this.positions.length - 1) {
+          this.selectedSquare = null;
+          this.handleTrainerUserMove(match, chess);
+          return;
+        }
+
+        // 2. Puzzle Retry Mode
         if (this.retryMode && this.retryTargetUci) {
           if (uci === this.retryTargetUci) {
             document.getElementById('coach-headline').textContent =
@@ -531,6 +566,26 @@ class ChessCoachApp {
       </defs>
     `;
     badgeLayer.innerHTML = '';
+
+    // Draw Book Hint Arrow if active in Opening Trainer
+    if (this.trainerHintUci && this.trainerHintUci.length >= 4) {
+      const from = this.squareToCoords(this.trainerHintUci.slice(0, 2));
+      const to = this.squareToCoords(this.trainerHintUci.slice(2, 4));
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', from.x);
+      line.setAttribute('y1', from.y);
+      line.setAttribute('x2', to.x - (dx / len) * 26);
+      line.setAttribute('y2', to.y - (dy / len) * 26);
+      line.setAttribute('stroke', '#22c55e');
+      line.setAttribute('stroke-width', '18');
+      line.setAttribute('stroke-linecap', 'round');
+      line.setAttribute('opacity', '0.9');
+      line.setAttribute('marker-end', 'url(#arr-green)');
+      svg.appendChild(line);
+    }
 
     if (this.currentPly === 0 || this.retryMode) return;
 
@@ -927,6 +982,311 @@ class ChessCoachApp {
       <div>${answer}</div>
     `;
     log.prepend(item);
+  }
+
+  switchPanelTab(tab) {
+    document.querySelectorAll('.ptab').forEach((b) => {
+      b.classList.toggle('active', b.dataset.ptab === tab);
+    });
+    ['report', 'moves', 'ask', 'trainer'].forEach((id) => {
+      document.getElementById(`ptab-${id}`)?.classList.toggle('hidden', id !== tab);
+    });
+  }
+
+  populateTrainerOpenings() {
+    const sel = document.getElementById('trainer-opening-select');
+    sel.innerHTML = OPENING_DRILLS.map(
+      (d) => `<option value="${d.id}">[${d.color === 'w' ? 'White' : 'Black'}] ${d.name}</option>`
+    ).join('');
+    this.trainerDrill = OPENING_DRILLS[0];
+    this.renderTrainerCard();
+  }
+
+  renderTrainerCard() {
+    const d = this.trainerDrill;
+    if (!d) return;
+    document.getElementById('trainer-title').textContent =
+      `${d.name.toUpperCase()} (${d.color === 'w' ? 'PLAY AS WHITE' : 'PLAY AS BLACK'})`;
+    document.getElementById('trainer-desc').textContent = d.desc;
+
+    const chips = document.getElementById('trainer-line-chips');
+    chips.innerHTML = d.moves
+      .map((san, idx) => {
+        const moveNum = Math.floor(idx / 2) + 1;
+        const prefix = idx % 2 === 0 ? `${moveNum}.` : '';
+        const cls = idx < this.currentPly ? 'done' : idx === this.currentPly ? 'current' : '';
+        return `<span class="book-chip ${cls}">${prefix}${san}</span>`;
+      })
+      .join('');
+  }
+
+  async startOpeningTrainer() {
+    this.analysisRunId++;
+    this.trainerActive = true;
+    this.retryMode = false;
+    this.trainerHintUci = null;
+    this.aiThinking = false;
+
+    const d = this.trainerDrill;
+    this.flipped = d.color === 'b';
+    this.headers = {
+      White: d.color === 'w' ? 'You (White)' : 'Stockfish AI (White)',
+      Black: d.color === 'b' ? 'You (Black)' : 'Stockfish AI (Black)',
+      WhiteElo: '',
+      BlackElo: '(Coach AI)',
+    };
+    this.opening = { name: d.name, bookPly: d.moves.length };
+    document.getElementById('opening-badge').textContent = `Opening Trainer • ${d.name}`;
+
+    const startChess = new Chess();
+    this.positions = [
+      {
+        ply: 0,
+        fen: startChess.fen(),
+        san: 'Start',
+        from: null,
+        to: null,
+        moverColor: null,
+        cpWhite: 20,
+        mateWhite: null,
+        bestMoveUci: null,
+        pv: [],
+        classification: null,
+        coaching: null,
+      },
+    ];
+    this.currentPly = 0;
+
+    this.updatePlayerBars();
+    this.renderMovesList();
+    this.renderTrainerCard();
+    this.goToPly(0);
+
+    document.getElementById('coach-badge').className = 'cls-badge book';
+    document.getElementById('coach-badge').textContent = 'OPENING DRILL 📖';
+    document.getElementById('coach-move-title').textContent = d.name;
+    document.getElementById('coach-headline').textContent =
+      d.color === 'w'
+        ? `Your turn as White! Play 1. ${d.moves[0]} on the board (or click "💡 Show Book Hint").`
+        : `AI will open as White... get ready to respond with ${d.moves[1]}!`;
+
+    if (d.color === 'b') {
+      await this.makeTrainerAiMove();
+    }
+  }
+
+  showTrainerBookHint() {
+    if (!this.trainerActive) {
+      this.startOpeningTrainer();
+      return;
+    }
+    const pos = this.positions[this.currentPly];
+    const chess = new Chess(pos.fen);
+    const d = this.trainerDrill;
+
+    if (this.currentPly < d.moves.length) {
+      const expectedSan = d.moves[this.currentPly];
+      const match = chess.moves({ verbose: true }).find((m) => m.san === expectedSan);
+      if (match) {
+        this.trainerHintUci = `${match.from}${match.to}${match.promotion || ''}`;
+        const note = d.notes?.[this.currentPly + 1] || `Book theory move in the ${d.name}.`;
+        document.getElementById('coach-headline').textContent = `Book Hint: Play ${expectedSan} — ${note}`;
+        this.renderBoard();
+        return;
+      }
+    }
+
+    // Out of book: ask Stockfish for a hint
+    this.engine.evaluateFen(pos.fen, 12).then((res) => {
+      if (res.bestMoveUci) {
+        this.trainerHintUci = res.bestMoveUci;
+        const san = uciPvToSan(pos.fen, [res.bestMoveUci], 1)[0] || res.bestMoveUci;
+        document.getElementById('coach-headline').textContent = `Engine Hint: Consider playing ${san}!`;
+        this.renderBoard();
+      }
+    });
+  }
+
+  undoTrainerMove() {
+    if (!this.trainerActive || this.positions.length <= 1 || this.aiThinking) return;
+    // Pop AI reply + User move (2 plies if available)
+    const popCount = this.positions.length >= 3 ? 2 : 1;
+    for (let i = 0; i < popCount; i++) this.positions.pop();
+    this.currentPly = this.positions.length - 1;
+    this.trainerHintUci = null;
+    this.renderMovesList();
+    this.renderTrainerCard();
+    this.goToPly(this.currentPly);
+  }
+
+  async handleTrainerUserMove(moveObj, chessBefore) {
+    const d = this.trainerDrill;
+    const ply = this.currentPly + 1;
+    this.trainerHintUci = null;
+
+    // In Guided Book Mode, check if we are still within the opening book moves
+    if (this.trainerMode === 'guided' && this.currentPly < d.moves.length) {
+      const expectedSan = d.moves[this.currentPly];
+      if (moveObj.san !== expectedSan) {
+        const match = chessBefore.moves({ verbose: true }).find((m) => m.san === expectedSan);
+        if (match) {
+          this.trainerHintUci = `${match.from}${match.to}${match.promotion || ''}`;
+        }
+        const note = d.notes?.[ply] || `Main book line in the ${d.name}.`;
+        document.getElementById('coach-badge').className = 'cls-badge inaccuracy';
+        document.getElementById('coach-badge').textContent = 'OFF BOOK ?!';
+        document.getElementById('coach-move-title').textContent = `Try ${expectedSan} Instead`;
+        document.getElementById('coach-headline').textContent =
+          `You played ${moveObj.san}, but the ${d.name} book move here is ${expectedSan} (shown by the green arrow): ${note} (Switch mode to "Free Opening Sparring" if you want to play sidelines!)`;
+        this.renderBoard();
+        return;
+      }
+    }
+
+    await this.commitTrainerMove(moveObj);
+
+    const latestPos = this.positions[this.currentPly];
+    const latestChess = new Chess(latestPos.fen);
+    if (!latestChess.isGameOver()) {
+      await this.makeTrainerAiMove();
+    }
+  }
+
+  async commitTrainerMove(moveObj) {
+    const prev = this.positions[this.currentPly];
+    const chess = new Chess(prev.fen);
+    const m = chess.move(moveObj);
+    if (!m) return;
+
+    const ply = this.currentPly + 1;
+    const depth = parseInt(document.getElementById('depth-select').value, 10) || 12;
+
+    // Ensure prev has engine eval if not yet evaluated
+    if (!prev.bestMoveUci) {
+      const prevEval = await this.engine.evaluateFen(prev.fen, depth);
+      prev.cpWhite = prevEval.cpWhite;
+      prev.mateWhite = prevEval.mateWhite;
+      prev.bestMoveUci = prevEval.bestMoveUci;
+      prev.pv = prevEval.pv || [];
+    }
+
+    const afterFen = chess.fen();
+    const res = await this.engine.evaluateFen(afterFen, depth);
+
+    const sanList = this.positions.slice(1).map((p) => p.san).concat(m.san);
+    const detected = detectOpening(sanList);
+    const inCuratedBook =
+      this.currentPly < this.trainerDrill.moves.length &&
+      m.san === this.trainerDrill.moves[this.currentPly];
+
+    const bestSanList = uciPvToSan(prev.fen, prev.pv, 5);
+    const punishSanList = uciPvToSan(afterFen, res.pv || [], 5);
+
+    const classification = classifyMove({
+      ply,
+      bookPly: inCuratedBook ? ply : detected.bookPly,
+      moverColor: m.color,
+      prevCpWhite: prev.cpWhite,
+      afterCpWhite: res.cpWhite,
+      bestMoveUci: prev.bestMoveUci,
+      playedUci: `${m.from}${m.to}${m.promotion || ''}`,
+      prevFen: prev.fen,
+      afterFen,
+    });
+
+    const coaching = buildDeepCoaching({
+      ply,
+      san: m.san,
+      from: m.from,
+      to: m.to,
+      moverColor: m.color,
+      prevFen: prev.fen,
+      afterFen,
+      prevCpWhite: prev.cpWhite,
+      afterCpWhite: res.cpWhite,
+      bestSan: bestSanList[0] || null,
+      pvSan: bestSanList,
+      punishPvSan: punishSanList,
+      classification,
+    });
+
+    // If this ply has a curated book note, highlight it in the coach headline!
+    if (inCuratedBook && this.trainerDrill.notes?.[ply]) {
+      coaching.headline = `${this.trainerDrill.notes[ply]} (Book Move 📖)`;
+    }
+
+    const newPos = {
+      ply,
+      prevFen: prev.fen,
+      fen: afterFen,
+      san: m.san,
+      from: m.from,
+      to: m.to,
+      playedUci: `${m.from}${m.to}${m.promotion || ''}`,
+      moverColor: m.color,
+      cpWhite: res.cpWhite,
+      mateWhite: res.mateWhite,
+      bestMoveUci: res.bestMoveUci,
+      pv: res.pv || [],
+      bestSan: bestSanList[0] || null,
+      pvSan: bestSanList,
+      punishPvSan: punishSanList,
+      classification,
+      coaching,
+    };
+
+    this.positions.push(newPos);
+    this.currentPly = ply;
+    this.renderMovesList();
+    this.renderTrainerCard();
+    this.renderReportCard();
+    this.goToPly(ply);
+  }
+
+  async makeTrainerAiMove() {
+    this.aiThinking = true;
+    const pos = this.positions[this.currentPly];
+    const chess = new Chess(pos.fen);
+    const d = this.trainerDrill;
+
+    await new Promise((r) => setTimeout(r, 320));
+
+    let chosenMove = null;
+    // Follow the curated opening book if still in the book line
+    const historyMatch = this.positions
+      .slice(1)
+      .every((p, idx) => p.san === d.moves[idx]);
+
+    if (historyMatch && this.currentPly < d.moves.length) {
+      const bookSan = d.moves[this.currentPly];
+      chosenMove = chess.moves({ verbose: true }).find((m) => m.san === bookSan) || null;
+    }
+
+    if (!chosenMove) {
+      // Out of book — let Stockfish AI pick its move!
+      const res = await this.engine.evaluateFen(pos.fen, 12);
+      if (res.bestMoveUci) {
+        const from = res.bestMoveUci.slice(0, 2);
+        const to = res.bestMoveUci.slice(2, 4);
+        const promotion = res.bestMoveUci.length > 4 ? res.bestMoveUci[4] : undefined;
+        chosenMove = chess.moves({ verbose: true }).find(
+          (m) => m.from === from && m.to === to && (!promotion || m.promotion === promotion)
+        );
+      }
+      if (!chosenMove) {
+        const all = chess.moves({ verbose: true });
+        chosenMove = all[0] || null;
+      }
+    }
+
+    if (chosenMove) {
+      await this.commitTrainerMove(chosenMove);
+      if (this.currentPly === d.moves.length) {
+        document.getElementById('coach-headline').textContent +=
+          ` 🎉 You completed the ${d.name} book line! Keep playing to spar out the middlegame against Stockfish AI with live move coaching!`;
+      }
+    }
+    this.aiThinking = false;
   }
 }
 

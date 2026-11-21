@@ -40,6 +40,10 @@
           <option value="16">Deep (Depth 16)</option>
         </select>
 
+        <button id="open-trainer-btn" class="primary-btn trainer-top-btn" type="button">
+          ♞ Practice Openings vs AI
+        </button>
+
         <button id="open-import-btn" class="primary-btn" type="button">
           + Load / Import Game
         </button>
@@ -178,11 +182,12 @@
           <canvas id="eval-chart" width="600" height="96"></canvas>
         </div>
 
-        <!-- Lower Tabs: Report Card | Move List | Ask Coach Q&A -->
-        <div class="panel-tabs">
+        <!-- Lower Tabs: Report Card | Move List | Ask Coach Q&A | Opening Trainer -->
+        <div class="panel-tabs four-tabs">
           <button class="ptab active" data-ptab="report" type="button">Report Card</button>
           <button class="ptab" data-ptab="moves" type="button">Moves List</button>
           <button class="ptab" data-ptab="ask" type="button">Ask Coach Q&amp;A</button>
+          <button class="ptab" data-ptab="trainer" type="button">Opening Trainer</button>
         </div>
 
         <div class="panel-content">
@@ -232,6 +237,38 @@
             </div>
 
             <div id="ask-log" class="ask-log"></div>
+          </div>
+
+          <!-- Tab 4: Practice Openings vs AI -->
+          <div id="ptab-trainer" class="ptab-pane hidden">
+            <div class="trainer-controls">
+              <div class="trainer-row">
+                <label for="trainer-opening-select">Opening Line:</label>
+                <select id="trainer-opening-select" class="depth-select full-flex"></select>
+              </div>
+
+              <div class="trainer-row">
+                <label for="trainer-mode-select">Practice Mode:</label>
+                <select id="trainer-mode-select" class="depth-select full-flex">
+                  <option value="guided">Guided Book Drill → Spar vs AI</option>
+                  <option value="free">Free Opening Sparring vs AI (Any Moves)</option>
+                </select>
+              </div>
+
+              <div class="trainer-btn-row">
+                <button id="trainer-start-btn" class="primary-btn" type="button">▶ Start Practice vs AI</button>
+                <button id="trainer-hint-btn" class="ctrl-btn accent-gold" type="button">💡 Show Book Hint</button>
+                <button id="trainer-undo-btn" class="ctrl-btn" type="button">↩ Takeback</button>
+              </div>
+            </div>
+
+            <div id="trainer-theory-card" class="study-plan-box">
+              <div id="trainer-title" class="study-title">SELECT AN OPENING &amp; CLICK START</div>
+              <p id="trainer-desc" class="deep-text">
+                Practice the main book moves against the AI with live explanation on every move—then continue playing out the middlegame against Stockfish with real-time coaching!
+              </p>
+              <div id="trainer-line-chips" class="trainer-line-chips"></div>
+            </div>
           </div>
         </div>
       </section>

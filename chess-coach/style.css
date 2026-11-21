@@ -997,6 +997,76 @@ html, body {
   margin-top: 2px;
 }
 
+.panel-tabs.four-tabs {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.trainer-top-btn {
+  background: var(--felt);
+  color: #fff;
+  border-bottom-color: #1c5e3a;
+}
+
+.trainer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.trainer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.trainer-row label {
+  min-width: 98px;
+  color: var(--muted);
+}
+
+.full-flex {
+  flex: 1;
+}
+
+.trainer-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.trainer-line-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.book-chip {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.book-chip.done {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: var(--cls-best);
+  color: #86efac;
+}
+
+.book-chip.current {
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 800;
+}
+
 .hidden {
   display: none !important;
 }
