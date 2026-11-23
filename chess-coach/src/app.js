@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import { PIECE_SVGS, detectOpening, SAMPLE_GAMES, OPENING_DRILLS } from './pieces.js';
+import { PIECE_SVGS, detectOpening, SAMPLE_GAMES, OPENING_DRILLS } from './pieces.js?v=3';
 import {
   StockfishEngine,
   formatEval,
@@ -7,7 +7,7 @@ import {
   classifyMove,
   buildDeepCoaching,
   findHangingPieces,
-} from './engine.js';
+} from './engine.js?v=3';
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
@@ -30,7 +30,8 @@ class ChessCoachApp {
     // Opening Trainer vs AI state
     this.trainerActive = false;
     this.trainerDrill = OPENING_DRILLS[0];
-    this.trainerMode = 'guided'; // 'guided' or 'free'
+    this.trainerSideFilter = 'all';
+    this.trainerMode = 'guided'; // 'guided', 'quiz', or 'free'
     this.trainerHintUci = null;
     this.aiThinking = false;
 
@@ -89,15 +90,22 @@ class ChessCoachApp {
       this.startOpeningTrainer();
     });
 
-    document.getElementById('trainer-opening-select').addEventListener('change', (e) => {
-      const drill = OPENING_DRILLS.find((d) => d.id === e.target.value) || OPENING_DRILLS[0];
-      this.trainerDrill = drill;
-      this.startOpeningTrainer();
+    document.querySelectorAll('.side-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.side-filter-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.trainerSideFilter = btn.dataset.side;
+        this.populateTrainerOpenings();
+      });
     });
 
-    document.getElementById('trainer-mode-select').addEventListener('change', (e) => {
-      this.trainerMode = e.target.value;
-      this.updateGuidePromptAndArrow();
+    document.querySelectorAll('.gstyle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.gstyle-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.trainerMode = btn.dataset.gmode;
+        this.updateGuidePromptAndArrow();
+      });
     });
 
     document.getElementById('trainer-auto-play-btn').addEventListener('click', () => this.autoPlayNextBookMove());
@@ -489,6 +497,11 @@ class ChessCoachApp {
         if (this.selectedSquare === sqName) sqEl.classList.add('selected');
         if (legalTargets.has(sqName)) sqEl.classList.add('legal-target');
 
+        if (this.trainerActive && this.trainerHintUci && this.trainerHintUci.length >= 4) {
+          if (this.trainerHintUci.slice(0, 2) === sqName) sqEl.classList.add('guide-from');
+          if (this.trainerHintUci.slice(2, 4) === sqName) sqEl.classList.add('guide-to');
+        }
+
         if (displayCol === 0) {
           const rankSpan = document.createElement('span');
           rankSpan.className = 'coord-rank';
@@ -518,6 +531,23 @@ class ChessCoachApp {
 
   onSquareClick(sqName, chess) {
     if (this.aiThinking) return;
+
+    // 1-Click convenience in Guided Opening Trainer: clicking the highlighted green destination square executes the guided book move!
+    if (
+      this.trainerActive &&
+      !this.selectedSquare &&
+      this.trainerHintUci &&
+      this.trainerHintUci.slice(2, 4) === sqName &&
+      this.currentPly === this.positions.length - 1
+    ) {
+      const fromSq = this.trainerHintUci.slice(0, 2);
+      const legal = chess.moves({ square: fromSq, verbose: true });
+      const match = legal.find((m) => m.to === sqName);
+      if (match) {
+        this.handleTrainerUserMove(match, chess);
+        return;
+      }
+    }
 
     if (this.selectedSquare && this.selectedSquare !== sqName) {
       const legal = chess.moves({ square: this.selectedSquare, verbose: true });
@@ -1009,12 +1039,37 @@ class ChessCoachApp {
   }
 
   populateTrainerOpenings() {
-    const sel = document.getElementById('trainer-opening-select');
-    sel.innerHTML = OPENING_DRILLS.map(
-      (d) => `<option value="${d.id}">[${d.color === 'w' ? 'Play as White' : 'Play as Black'}] ${d.name}</option>`
-    ).join('');
-    this.trainerDrill = OPENING_DRILLS[0];
-    this.renderTrainerCard();
+    const grid = document.getElementById('opening-cards-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const filtered = OPENING_DRILLS.filter(
+      (d) => this.trainerSideFilter === 'all' || d.color === this.trainerSideFilter
+    );
+
+    for (const d of filtered) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `op-pick-card ${this.trainerDrill?.id === d.id ? 'active' : ''}`;
+      const previewMoves = d.moves
+        .slice(0, 6)
+        .map((m, i) => (i % 2 === 0 ? `${Math.floor(i / 2) + 1}.${m}` : m))
+        .join(' ');
+      card.innerHTML = `
+        <div class="op-pick-top">
+          <span class="op-side-pill ${d.color}">${d.color === 'w' ? '⚪ White' : '⚫ Black'}</span>
+          <span class="op-tag-pill">${d.tag || 'Book'}</span>
+        </div>
+        <div class="op-pick-name">${d.name}</div>
+        <div class="op-pick-moves">${previewMoves}...</div>
+      `;
+      card.addEventListener('click', () => {
+        this.trainerDrill = d;
+        this.populateTrainerOpenings();
+        this.startOpeningTrainer();
+      });
+      grid.appendChild(card);
+    }
   }
 
   renderTrainerCard() {
@@ -1174,9 +1229,8 @@ class ChessCoachApp {
 
     if (d.color === 'b') {
       await this.makeTrainerAiMove();
-    } else {
-      this.updateGuidePromptAndArrow();
     }
+    this.updateGuidePromptAndArrow();
   }
 
   showTrainerBookHint() {
@@ -1265,9 +1319,50 @@ class ChessCoachApp {
     if (!m) return;
 
     const ply = this.currentPly + 1;
-    const depth = parseInt(document.getElementById('depth-select').value, 10) || 12;
+    const afterFen = chess.fen();
+    const inCuratedBook =
+      this.currentPly < this.trainerDrill.moves.length &&
+      m.san === this.trainerDrill.moves[this.currentPly];
 
-    // Ensure prev has engine eval if not yet evaluated
+    // Fast instant commit for book moves so there is ZERO lag on the board!
+    if (inCuratedBook) {
+      const note = this.trainerDrill.notes?.[ply] || `Book move in the ${this.trainerDrill.name}.`;
+      const newPos = {
+        ply,
+        prevFen: prev.fen,
+        fen: afterFen,
+        san: m.san,
+        from: m.from,
+        to: m.to,
+        playedUci: `${m.from}${m.to}${m.promotion || ''}`,
+        moverColor: m.color,
+        cpWhite: 25,
+        mateWhite: null,
+        bestMoveUci: null,
+        pv: [],
+        bestSan: m.san,
+        pvSan: [],
+        punishPvSan: [],
+        classification: { key: 'book', label: 'BOOK', symbol: '📖', winLoss: 0, cpLoss: 0, accuracy: 100 },
+        coaching: {
+          phase: 'Opening',
+          headline: `${note} (Book Move 📖)`,
+          tactical: 'Follows main-line opening theory.',
+          pvLineText: `Opening Line: ${this.trainerDrill.name}`,
+          positional: this.trainerDrill.desc,
+          takeaway: note,
+        },
+      };
+
+      this.positions.push(newPos);
+      this.currentPly = ply;
+      this.renderMovesList();
+      this.renderTrainerCard();
+      this.goToPly(ply);
+      return;
+    }
+
+    const depth = 10;
     if (!prev.bestMoveUci) {
       const prevEval = await this.engine.evaluateFen(prev.fen, depth);
       prev.cpWhite = prevEval.cpWhite;
@@ -1276,21 +1371,15 @@ class ChessCoachApp {
       prev.pv = prevEval.pv || [];
     }
 
-    const afterFen = chess.fen();
     const res = await this.engine.evaluateFen(afterFen, depth);
-
     const sanList = this.positions.slice(1).map((p) => p.san).concat(m.san);
     const detected = detectOpening(sanList);
-    const inCuratedBook =
-      this.currentPly < this.trainerDrill.moves.length &&
-      m.san === this.trainerDrill.moves[this.currentPly];
-
     const bestSanList = uciPvToSan(prev.fen, prev.pv, 5);
     const punishSanList = uciPvToSan(afterFen, res.pv || [], 5);
 
     const classification = classifyMove({
       ply,
-      bookPly: inCuratedBook ? ply : detected.bookPly,
+      bookPly: detected.bookPly,
       moverColor: m.color,
       prevCpWhite: prev.cpWhite,
       afterCpWhite: res.cpWhite,
@@ -1315,11 +1404,6 @@ class ChessCoachApp {
       punishPvSan: punishSanList,
       classification,
     });
-
-    // If this ply has a curated book note, highlight it in the coach headline!
-    if (inCuratedBook && this.trainerDrill.notes?.[ply]) {
-      coaching.headline = `${this.trainerDrill.notes[ply]} (Book Move 📖)`;
-    }
 
     const newPos = {
       ply,

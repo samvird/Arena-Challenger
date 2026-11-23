@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
   <script type="importmap">
     {
       "imports": {
@@ -114,28 +114,31 @@
       <section class="analysis-column">
         <!-- FOCUSED OPENING GUIDE VIEW (Shown when "Opening Guide vs AI" is active) -->
         <div id="trainer-view" class="trainer-focus-view hidden">
-          <div class="trainer-card-top">
-            <div class="trainer-row">
-              <label for="trainer-opening-select">1. Choose Opening:</label>
-              <select id="trainer-opening-select" class="depth-select full-flex"></select>
+          <!-- 1. Visual White Openings vs Black Defenses Picker -->
+          <div class="trainer-picker-card">
+            <div class="picker-top-row">
+              <div class="side-filter-group">
+                <button class="side-filter-btn active" data-side="all" type="button">All (12)</button>
+                <button class="side-filter-btn" data-side="w" type="button">⚪ White Openings</button>
+                <button class="side-filter-btn" data-side="b" type="button">⚫ Black Defenses</button>
+              </div>
+
+              <div class="guide-style-pills">
+                <button class="gstyle-btn active" data-gmode="guided" type="button">🟢 Guided Arrows</button>
+                <button class="gstyle-btn" data-gmode="quiz" type="button">🟡 Memory Quiz</button>
+                <button class="gstyle-btn" data-gmode="free" type="button">⚔️ Free Spar</button>
+              </div>
             </div>
 
-            <div class="trainer-row">
-              <label for="trainer-mode-select">2. Guide Style:</label>
-              <select id="trainer-mode-select" class="depth-select full-flex">
-                <option value="guided" selected>🟢 Step-by-Step Guide (Auto-Show Arrow on Board)</option>
-                <option value="quiz">🟡 Memory Test (Hide Arrow Until I Click Hint)</option>
-                <option value="free">⚔️ Free Sparring vs AI (Play Any Moves)</option>
-              </select>
-            </div>
+            <div id="opening-cards-grid" class="opening-cards-grid"></div>
           </div>
 
-          <!-- Big Clear "WHAT TO DO RIGHT NOW" Instruction Banner -->
+          <!-- 2. Big Clear "WHAT TO DO RIGHT NOW" Instruction Banner -->
           <div id="guide-prompt-card" class="guide-prompt-card">
-            <div class="guide-step-eyebrow" id="guide-step-eyebrow">STEP 1 OF 6 • YOUR TURN</div>
+            <div class="guide-step-eyebrow" id="guide-step-eyebrow">STEP 1 • FOLLOW THE GREEN ARROW</div>
             <h2 class="guide-action-title" id="guide-action-title">Play 1. e4 (Pawn e2 → e4)</h2>
             <p class="guide-action-why" id="guide-action-why">
-              Follow the green arrow on the board! Stakes a claim in the center and opens lines for your Queen and Bishop.
+              Click the highlighted green piece on the board and move it to the target square (or click "Play Move For Me").
             </p>
 
             <div class="guide-btn-bar">
@@ -146,7 +149,7 @@
             </div>
           </div>
 
-          <!-- Step-by-Step Numbered Roadmap -->
+          <!-- 3. Step-by-Step Numbered Roadmap -->
           <div class="roadmap-card">
             <div class="roadmap-header">
               <span id="trainer-title">OPENING MOVE ROADMAP</span>
@@ -154,7 +157,6 @@
             </div>
             <p id="trainer-desc" class="roadmap-desc"></p>
             <div id="trainer-roadmap-list" class="roadmap-list"></div>
-            <div id="trainer-line-chips" class="hidden"></div>
           </div>
         </div>
 
@@ -349,6 +351,6 @@
     </div>
   </div>
 
-  <script type="module" src="src/app.js"></script>
+  <script type="module" src="src/app.js?v=3"></script>
 </body>
 </html>

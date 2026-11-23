@@ -305,6 +305,14 @@ html, body {
   box-shadow: inset 0 0 0 999px rgba(45, 138, 86, 0.55);
 }
 
+.sq.guide-from {
+  box-shadow: inset 0 0 0 4px #22c55e, inset 0 0 0 999px rgba(34, 197, 94, 0.28);
+}
+
+.sq.guide-to {
+  box-shadow: inset 0 0 0 4px #22c55e, inset 0 0 0 999px rgba(34, 197, 94, 0.38);
+}
+
 .sq.legal-target::after {
   content: '';
   width: 26%;
@@ -1105,14 +1113,133 @@ html, body {
   gap: 12px;
 }
 
-.trainer-card-top {
+.trainer-picker-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.picker-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.side-filter-group,
+.guide-style-pills {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.side-filter-btn,
+.gstyle-btn {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.side-filter-btn.active {
+  background: var(--surface-raised);
+  color: var(--gold);
+}
+
+.gstyle-btn.active {
+  background: var(--felt);
+  color: #fff;
+}
+
+.opening-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 7px;
+  max-height: 175px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.op-pick-card {
+  text-align: left;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 11px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: border-color 0.12s ease, transform 0.1s ease;
+}
+
+.op-pick-card:hover {
+  border-color: var(--muted);
+}
+
+.op-pick-card.active {
+  border-color: var(--gold);
+  background: rgba(229, 169, 60, 0.14);
+}
+
+.op-pick-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.op-side-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+
+.op-side-pill.w {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.op-side-pill.b {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.op-tag-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.op-pick-name {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.op-pick-moves {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .guide-prompt-card {

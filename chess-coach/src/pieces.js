@@ -15,12 +15,15 @@ export const PIECE_SVGS = {
 
 const OPENINGS = [
   { prefix: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5'], name: 'Ruy Lopez (Spanish Game)' },
+  { prefix: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Nxd5', 'Nxf7'], name: 'Italian Game: Fried Liver Attack' },
   { prefix: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5'], name: 'Italian Game: Giuoco Piano' },
   { prefix: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6'], name: 'Italian Game: Two Knights Defense' },
   { prefix: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'], name: 'Italian Game' },
   { prefix: ['e4', 'e5', 'Nf3', 'Nc6', 'd4'], name: 'Scotch Game' },
+  { prefix: ['e4', 'e5', 'Nc3', 'Nf6', 'f4'], name: 'Vienna Gambit' },
   { prefix: ['e4', 'e5', 'Nf3', 'Nf6'], name: "Petrov's Defense" },
   { prefix: ['e4', 'e5', 'f4'], name: "King's Gambit" },
+  { prefix: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'g6'], name: 'Sicilian Defense: Dragon Variation' },
   { prefix: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'a6'], name: 'Sicilian Defense: Najdorf' },
   { prefix: ['e4', 'c5', 'Nf3', 'Nc6'], name: 'Sicilian Defense: Open' },
   { prefix: ['e4', 'c5', 'c3'], name: 'Sicilian Defense: Alapin' },
@@ -63,8 +66,45 @@ export function detectOpening(sanHistory) {
 
 export const OPENING_DRILLS = [
   {
+    id: 'fried_liver',
+    name: 'Fried Liver Attack',
+    tag: 'Tactical Crush',
+    color: 'w',
+    desc: 'Attack f7 with Knight + Bishop, sacrifice your Knight with 6. Nxf7!! to drag Black’s King out into the open board, and hunt it down!',
+    moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'Ng5', 'd5', 'exd5', 'Nxd5', 'Nxf7', 'Kxf7', 'Qf3+', 'Ke6', 'Nc3'],
+    notes: {
+      1: '1. e4 opens lines for your Queen and King’s Bishop toward f7.',
+      3: '2. Nf3 develops the Knight and attacks e5.',
+      5: '3. Bc4 aims directly at f7, Black’s weakest square.',
+      7: '4. Ng5! Dual attack on f7 with both your Knight and Bishop!',
+      9: '5. exd5 captures Black’s central counter-strike pawn and opens the e-file.',
+      11: '6. Nxf7!! The Fried Liver sacrifice! Gives up the Knight to expose Black’s King on f7.',
+      13: '7. Qf3+! Forks Black’s exposed King on f7 and the pinned Knight on d5!',
+      15: '8. Nc3 piles a third attacker onto the pinned d5 Knight—White has a crushing attack!',
+    },
+  },
+  {
+    id: 'sicilian_dragon',
+    name: 'Sicilian Defense: Dragon',
+    tag: 'Sharp Counterattack',
+    color: 'b',
+    desc: 'Fianchetto your dark-squared "Dragon" Bishop on g7 breathing fire down the long diagonal toward White’s queenside!',
+    moves: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'g6', 'Be3', 'Bg7', 'f3', 'O-O', 'Qd2', 'Nc6'],
+    notes: {
+      2: '1... c5 fights for d4 from the flank and creates an asymmetric, fighting game.',
+      4: '2... d6 controls e5 and prepares smooth development.',
+      6: '3... cxd4 trades your flank c-pawn for White’s central d-pawn and opens the half-open c-file.',
+      8: '4... Nf6 develops with tempo by attacking White’s e4 pawn.',
+      10: '5... g6! The Dragon move—prepares to fianchetto your dark-squared Bishop on g7.',
+      12: '6... Bg7 places the Dragon Bishop on the long h8-a1 diagonal, pressuring d4 and b2.',
+      14: '7... O-O secures your King and activates the Rook.',
+      16: '8... Nc6 develops the Knight with maximum pressure on White’s d4 center!',
+    },
+  },
+  {
     id: 'italian_giuoco',
     name: 'Italian Game: Giuoco Piano',
+    tag: 'Classic Center',
     color: 'w',
     desc: 'Control the center early, aim Bc4 at f7, and use c3 + d4 to build a classic pawn center.',
     moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'c3', 'Nf6', 'd3', 'd6', 'O-O', 'a6'],
@@ -80,6 +120,7 @@ export const OPENING_DRILLS = [
   {
     id: 'ruy_lopez',
     name: 'Ruy Lopez (Spanish Game)',
+    tag: 'Positional Squeeze',
     color: 'w',
     desc: 'Pressure the defender of e5 with Bb5, castle rapidly, and build long-term central pressure.',
     moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'd6'],
@@ -96,6 +137,7 @@ export const OPENING_DRILLS = [
   {
     id: 'london_system',
     name: 'London System',
+    tag: 'Rock Solid',
     color: 'w',
     desc: 'An ultra-solid, easy-to-learn repertoire: develop Bf4 outside the pawn chain, then build the e3-d4-c3 pyramid.',
     moves: ['d4', 'd5', 'Bf4', 'Nf6', 'e3', 'c5', 'c3', 'Nc6', 'Nd2', 'e6', 'Ngf3', 'Bd6'],
@@ -111,6 +153,7 @@ export const OPENING_DRILLS = [
   {
     id: 'queens_gambit',
     name: "Queen's Gambit Declined",
+    tag: 'Grandmaster Staple',
     color: 'w',
     desc: 'Offer the c4 flank pawn to deflect Black’s central d5 pawn and dominate the center with Nc3 and Bg5.',
     moves: ['d4', 'd5', 'c4', 'e6', 'Nc3', 'Nf6', 'Bg5', 'Be7', 'e3', 'O-O', 'Nf3', 'Nbd7'],
@@ -126,6 +169,7 @@ export const OPENING_DRILLS = [
   {
     id: 'scotch_game',
     name: 'Scotch Game',
+    tag: 'Open Center',
     color: 'w',
     desc: 'Blow open the center on move 3 with d4! Great for active, tactical players who hate slow maneuvering.',
     moves: ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Bc5', 'Be3', 'Qf6', 'c3', 'Nge7'],
@@ -141,6 +185,7 @@ export const OPENING_DRILLS = [
   {
     id: 'sicilian_najdorf',
     name: 'Sicilian Defense: Najdorf',
+    tag: 'World Champ Line',
     color: 'b',
     desc: 'The choice of Bobby Fischer and Garry Kasparov: trade your c-pawn for White’s d-pawn and counterattack!',
     moves: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'a6', 'Be3', 'e5'],
@@ -156,6 +201,7 @@ export const OPENING_DRILLS = [
   {
     id: 'caro_kann',
     name: 'Caro-Kann Defense',
+    tag: 'Ultra Solid',
     color: 'b',
     desc: 'Extremely resilient defense against 1. e4: support d5 with c6 while keeping your light-squared Bishop free!',
     moves: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Ng3', 'Bg6', 'h4', 'h6'],
@@ -171,6 +217,7 @@ export const OPENING_DRILLS = [
   {
     id: 'french_defense',
     name: 'French Defense',
+    tag: 'Counter-Punch',
     color: 'b',
     desc: 'Counterattack White’s pawn chain at its base with c5 and Nc6!',
     moves: ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Nf6', 'e5', 'Nfd7', 'f4', 'c5', 'Nf3', 'Nc6'],
@@ -186,6 +233,7 @@ export const OPENING_DRILLS = [
   {
     id: 'kings_indian',
     name: "King's Indian Defense",
+    tag: 'Dynamic Attack',
     color: 'b',
     desc: 'Fianchetto your dark-squared Bishop on g7, castle fast, and launch a fiery kingside counterattack with e5.',
     moves: ['d4', 'Nf6', 'c4', 'g6', 'Nc3', 'Bg7', 'e4', 'd6', 'Nf3', 'O-O', 'Be2', 'e5'],
@@ -196,6 +244,21 @@ export const OPENING_DRILLS = [
       8: '4... d6 stops e5 and prepares your own e5 counter-strike.',
       10: '5... O-O secures your King before striking in the center.',
       12: '6... e5 challenges White’s center and unleashes the g7 Bishop!',
+    },
+  },
+  {
+    id: 'scandinavian',
+    name: 'Scandinavian Defense',
+    tag: 'Immediate Challenge',
+    color: 'b',
+    desc: 'Strike at 1. e4 on move 1 with 1... d5! Force immediate piece play and active development.',
+    moves: ['e4', 'd5', 'exd5', 'Qxd5', 'Nc3', 'Qa5', 'd4', 'Nf6', 'Nf3', 'Bf5'],
+    notes: {
+      2: '1... d5 immediately challenges White’s e4 pawn on move 1!',
+      4: '2... Qxd5 recaptures centrally while forcing White to spend a tempo with Nc3.',
+      6: '3... Qa5 places the Queen on a safe, active outpost eyeing e1 and c3.',
+      8: '4... Nf6 develops the kingside Knight and controls e4 and d5.',
+      10: '5... Bf5 develops the light-squared Bishop actively outside the pawn chain before playing e6/c6.',
     },
   },
 ];
