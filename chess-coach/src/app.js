@@ -80,21 +80,27 @@ class ChessCoachApp {
       });
     });
 
+    document.getElementById('mode-review-btn').addEventListener('click', () => {
+      this.setTopViewMode('review');
+    });
+
     document.getElementById('open-trainer-btn').addEventListener('click', () => {
-      this.switchPanelTab('trainer');
+      this.setTopViewMode('trainer');
       this.startOpeningTrainer();
     });
 
     document.getElementById('trainer-opening-select').addEventListener('change', (e) => {
       const drill = OPENING_DRILLS.find((d) => d.id === e.target.value) || OPENING_DRILLS[0];
       this.trainerDrill = drill;
-      this.renderTrainerCard();
+      this.startOpeningTrainer();
     });
 
     document.getElementById('trainer-mode-select').addEventListener('change', (e) => {
       this.trainerMode = e.target.value;
+      this.updateGuidePromptAndArrow();
     });
 
+    document.getElementById('trainer-auto-play-btn').addEventListener('click', () => this.autoPlayNextBookMove());
     document.getElementById('trainer-start-btn').addEventListener('click', () => this.startOpeningTrainer());
     document.getElementById('trainer-hint-btn').addEventListener('click', () => this.showTrainerBookHint());
     document.getElementById('trainer-undo-btn').addEventListener('click', () => this.undoTrainerMove());
@@ -344,6 +350,7 @@ class ChessCoachApp {
     this.retryMode = false;
     this.trainerActive = false;
     this.trainerHintUci = null;
+    this.setTopViewMode('review');
     this.updatePlayerBars();
     this.renderMovesList();
     this.goToPly(0);
@@ -988,15 +995,23 @@ class ChessCoachApp {
     document.querySelectorAll('.ptab').forEach((b) => {
       b.classList.toggle('active', b.dataset.ptab === tab);
     });
-    ['report', 'moves', 'ask', 'trainer'].forEach((id) => {
+    ['report', 'moves', 'ask'].forEach((id) => {
       document.getElementById(`ptab-${id}`)?.classList.toggle('hidden', id !== tab);
     });
+  }
+
+  setTopViewMode(mode) {
+    const isTrainer = mode === 'trainer';
+    document.getElementById('mode-review-btn').classList.toggle('active', !isTrainer);
+    document.getElementById('open-trainer-btn').classList.toggle('active', isTrainer);
+    document.getElementById('review-view').classList.toggle('hidden', isTrainer);
+    document.getElementById('trainer-view').classList.toggle('hidden', !isTrainer);
   }
 
   populateTrainerOpenings() {
     const sel = document.getElementById('trainer-opening-select');
     sel.innerHTML = OPENING_DRILLS.map(
-      (d) => `<option value="${d.id}">[${d.color === 'w' ? 'White' : 'Black'}] ${d.name}</option>`
+      (d) => `<option value="${d.id}">[${d.color === 'w' ? 'Play as White' : 'Play as Black'}] ${d.name}</option>`
     ).join('');
     this.trainerDrill = OPENING_DRILLS[0];
     this.renderTrainerCard();
@@ -1005,19 +1020,114 @@ class ChessCoachApp {
   renderTrainerCard() {
     const d = this.trainerDrill;
     if (!d) return;
-    document.getElementById('trainer-title').textContent =
-      `${d.name.toUpperCase()} (${d.color === 'w' ? 'PLAY AS WHITE' : 'PLAY AS BLACK'})`;
+    const totalSteps = Math.ceil(d.moves.length / 2);
+    const doneSteps = Math.min(totalSteps, Math.floor(this.currentPly / 2));
+
+    document.getElementById('trainer-title').textContent = `${d.name.toUpperCase()} — STEP-BY-STEP GUIDE`;
+    document.getElementById('trainer-progress-label').textContent = `${doneSteps} / ${totalSteps} Steps Completed`;
     document.getElementById('trainer-desc').textContent = d.desc;
 
-    const chips = document.getElementById('trainer-line-chips');
-    chips.innerHTML = d.moves
-      .map((san, idx) => {
-        const moveNum = Math.floor(idx / 2) + 1;
-        const prefix = idx % 2 === 0 ? `${moveNum}.` : '';
-        const cls = idx < this.currentPly ? 'done' : idx === this.currentPly ? 'current' : '';
-        return `<span class="book-chip ${cls}">${prefix}${san}</span>`;
-      })
-      .join('');
+    const list = document.getElementById('trainer-roadmap-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    for (let stepIdx = 0; stepIdx < totalSteps; stepIdx++) {
+      const wPly = stepIdx * 2;
+      const bPly = wPly + 1;
+      const wSan = d.moves[wPly] || '';
+      const bSan = d.moves[bPly] || '';
+      const userPly = d.color === 'w' ? wPly : bPly;
+      const note = d.notes?.[userPly + 1] || '';
+
+      const isDone = this.currentPly > Math.max(wPly, bPly);
+      const isCurrent = !isDone && this.currentPly >= wPly && this.currentPly <= bPly;
+
+      const row = document.createElement('div');
+      row.className = `roadmap-step ${isDone ? 'done' : isCurrent ? 'current' : ''}`;
+      row.innerHTML = `
+        <span class="step-badge">${isDone ? '✓ Done' : isCurrent ? '👉 Step ' + (stepIdx + 1) : 'Step ' + (stepIdx + 1)}</span>
+        <div class="step-body">
+          <div class="step-moves">${stepIdx + 1}. ${wSan} ${bSan ? '  •  ' + (stepIdx + 1) + '... ' + bSan : ''}</div>
+          <div class="step-note">${note}</div>
+        </div>
+      `;
+      list.appendChild(row);
+    }
+  }
+
+  updateGuidePromptAndArrow() {
+    if (!this.trainerActive) return;
+    const d = this.trainerDrill;
+    const pos = this.positions[this.currentPly];
+    if (!pos) return;
+
+    const chess = new Chess(pos.fen);
+    const promptCard = document.getElementById('guide-prompt-card');
+    const eyebrowEl = document.getElementById('guide-step-eyebrow');
+    const titleEl = document.getElementById('guide-action-title');
+    const whyEl = document.getElementById('guide-action-why');
+    promptCard.classList.remove('warn');
+
+    const totalSteps = Math.ceil(d.moves.length / 2);
+    const curStep = Math.floor(this.currentPly / 2) + 1;
+
+    if (this.currentPly < d.moves.length && chess.turn() === d.color) {
+      const expectedSan = d.moves[this.currentPly];
+      const match = chess.moves({ verbose: true }).find((m) => m.san === expectedSan);
+      const pieceNames = { p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
+      const moveDetail = match ? `Move ${pieceNames[match.piece] || 'Piece'} from ${match.from} → ${match.to}` : expectedSan;
+      const note = d.notes?.[this.currentPly + 1] || `Main book move in the ${d.name}.`;
+
+      if (this.trainerMode === 'guided' && match) {
+        this.trainerHintUci = `${match.from}${match.to}${match.promotion || ''}`;
+        eyebrowEl.textContent = `STEP ${curStep} OF ${totalSteps} • FOLLOW THE GREEN ARROW`;
+        titleEl.textContent = `Play ${expectedSan} (${moveDetail})`;
+        whyEl.textContent = `Why: ${note}`;
+      } else if (this.trainerMode === 'quiz') {
+        this.trainerHintUci = null;
+        eyebrowEl.textContent = `STEP ${curStep} OF ${totalSteps} • MEMORY TEST`;
+        titleEl.textContent = `What is the book move here?`;
+        whyEl.textContent = `Goal: ${note} (Click "💡 Show Arrow" if you need a hint!)`;
+      } else {
+        this.trainerHintUci = null;
+        eyebrowEl.textContent = `FREE SPARRING VS AI`;
+        titleEl.textContent = `Your Turn (${d.color === 'w' ? 'White' : 'Black'})`;
+        whyEl.textContent = `Book suggestion is ${expectedSan} (${note}), or play any move you want!`;
+      }
+    } else if (this.currentPly >= d.moves.length) {
+      this.trainerHintUci = null;
+      eyebrowEl.textContent = `🎉 OPENING GUIDE COMPLETE (${totalSteps}/${totalSteps} STEPS)`;
+      titleEl.textContent = `You Mastered the ${d.name}!`;
+      whyEl.textContent = `Keep making moves on the board to spar out the middlegame against Stockfish AI, or switch Guide Style to "Memory Test" and click ↺ Restart!`;
+    }
+
+    this.renderBoard();
+    this.renderTrainerCard();
+  }
+
+  async autoPlayNextBookMove() {
+    if (!this.trainerActive || this.aiThinking) return;
+    const pos = this.positions[this.currentPly];
+    const chess = new Chess(pos.fen);
+    const d = this.trainerDrill;
+
+    if (this.currentPly < d.moves.length) {
+      const expectedSan = d.moves[this.currentPly];
+      const match = chess.moves({ verbose: true }).find((m) => m.san === expectedSan);
+      if (match) {
+        await this.handleTrainerUserMove(match, chess);
+        return;
+      }
+    }
+
+    // Out of book: play engine's best move for the user
+    const res = await this.engine.evaluateFen(pos.fen, 12);
+    if (res.bestMoveUci) {
+      const from = res.bestMoveUci.slice(0, 2);
+      const to = res.bestMoveUci.slice(2, 4);
+      const match = chess.moves({ verbose: true }).find((m) => m.from === from && m.to === to);
+      if (match) await this.handleTrainerUserMove(match, chess);
+    }
   }
 
   async startOpeningTrainer() {
@@ -1026,6 +1136,7 @@ class ChessCoachApp {
     this.retryMode = false;
     this.trainerHintUci = null;
     this.aiThinking = false;
+    this.setTopViewMode('trainer');
 
     const d = this.trainerDrill;
     this.flipped = d.color === 'b';
@@ -1036,7 +1147,7 @@ class ChessCoachApp {
       BlackElo: '(Coach AI)',
     };
     this.opening = { name: d.name, bookPly: d.moves.length };
-    document.getElementById('opening-badge').textContent = `Opening Trainer • ${d.name}`;
+    document.getElementById('opening-badge').textContent = `Opening Guide • ${d.name}`;
 
     const startChess = new Chess();
     this.positions = [
@@ -1059,19 +1170,12 @@ class ChessCoachApp {
 
     this.updatePlayerBars();
     this.renderMovesList();
-    this.renderTrainerCard();
     this.goToPly(0);
-
-    document.getElementById('coach-badge').className = 'cls-badge book';
-    document.getElementById('coach-badge').textContent = 'OPENING DRILL 📖';
-    document.getElementById('coach-move-title').textContent = d.name;
-    document.getElementById('coach-headline').textContent =
-      d.color === 'w'
-        ? `Your turn as White! Play 1. ${d.moves[0]} on the board (or click "💡 Show Book Hint").`
-        : `AI will open as White... get ready to respond with ${d.moves[1]}!`;
 
     if (d.color === 'b') {
       await this.makeTrainerAiMove();
+    } else {
+      this.updateGuidePromptAndArrow();
     }
   }
 
@@ -1089,19 +1193,19 @@ class ChessCoachApp {
       const match = chess.moves({ verbose: true }).find((m) => m.san === expectedSan);
       if (match) {
         this.trainerHintUci = `${match.from}${match.to}${match.promotion || ''}`;
-        const note = d.notes?.[this.currentPly + 1] || `Book theory move in the ${d.name}.`;
-        document.getElementById('coach-headline').textContent = `Book Hint: Play ${expectedSan} — ${note}`;
+        const pieceNames = { p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
+        document.getElementById('guide-action-title').textContent =
+          `Hint: Play ${expectedSan} (${pieceNames[match.piece]} ${match.from} → ${match.to})`;
         this.renderBoard();
         return;
       }
     }
 
-    // Out of book: ask Stockfish for a hint
     this.engine.evaluateFen(pos.fen, 12).then((res) => {
       if (res.bestMoveUci) {
         this.trainerHintUci = res.bestMoveUci;
         const san = uciPvToSan(pos.fen, [res.bestMoveUci], 1)[0] || res.bestMoveUci;
-        document.getElementById('coach-headline').textContent = `Engine Hint: Consider playing ${san}!`;
+        document.getElementById('guide-action-title').textContent = `Engine Hint: Play ${san}`;
         this.renderBoard();
       }
     });
@@ -1109,14 +1213,13 @@ class ChessCoachApp {
 
   undoTrainerMove() {
     if (!this.trainerActive || this.positions.length <= 1 || this.aiThinking) return;
-    // Pop AI reply + User move (2 plies if available)
     const popCount = this.positions.length >= 3 ? 2 : 1;
     for (let i = 0; i < popCount; i++) this.positions.pop();
     this.currentPly = this.positions.length - 1;
     this.trainerHintUci = null;
     this.renderMovesList();
-    this.renderTrainerCard();
     this.goToPly(this.currentPly);
+    this.updateGuidePromptAndArrow();
   }
 
   async handleTrainerUserMove(moveObj, chessBefore) {
@@ -1124,20 +1227,22 @@ class ChessCoachApp {
     const ply = this.currentPly + 1;
     this.trainerHintUci = null;
 
-    // In Guided Book Mode, check if we are still within the opening book moves
-    if (this.trainerMode === 'guided' && this.currentPly < d.moves.length) {
+    if ((this.trainerMode === 'guided' || this.trainerMode === 'quiz') && this.currentPly < d.moves.length) {
       const expectedSan = d.moves[this.currentPly];
       if (moveObj.san !== expectedSan) {
         const match = chessBefore.moves({ verbose: true }).find((m) => m.san === expectedSan);
         if (match) {
           this.trainerHintUci = `${match.from}${match.to}${match.promotion || ''}`;
         }
-        const note = d.notes?.[ply] || `Main book line in the ${d.name}.`;
-        document.getElementById('coach-badge').className = 'cls-badge inaccuracy';
-        document.getElementById('coach-badge').textContent = 'OFF BOOK ?!';
-        document.getElementById('coach-move-title').textContent = `Try ${expectedSan} Instead`;
-        document.getElementById('coach-headline').textContent =
-          `You played ${moveObj.san}, but the ${d.name} book move here is ${expectedSan} (shown by the green arrow): ${note} (Switch mode to "Free Opening Sparring" if you want to play sidelines!)`;
+        const pieceNames = { p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
+        const detail = match ? `${pieceNames[match.piece]} from ${match.from} → ${match.to}` : expectedSan;
+        const note = d.notes?.[ply] || `Main book move in the ${d.name}.`;
+
+        const promptCard = document.getElementById('guide-prompt-card');
+        promptCard.classList.add('warn');
+        document.getElementById('guide-step-eyebrow').textContent = `NOT THE BOOK MOVE (YOU TRIED ${moveObj.san})`;
+        document.getElementById('guide-action-title').textContent = `Try ${expectedSan} Instead (${detail})`;
+        document.getElementById('guide-action-why').textContent = `Follow the green arrow on the board! ${note}`;
         this.renderBoard();
         return;
       }
@@ -1150,6 +1255,7 @@ class ChessCoachApp {
     if (!latestChess.isGameOver()) {
       await this.makeTrainerAiMove();
     }
+    this.updateGuidePromptAndArrow();
   }
 
   async commitTrainerMove(moveObj) {

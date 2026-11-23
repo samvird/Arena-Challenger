@@ -29,6 +29,11 @@
       </div>
 
       <div class="topbar-actions">
+        <div class="mode-switch-pill">
+          <button id="mode-review-btn" class="mode-pill-btn active" type="button">📊 Game Review</button>
+          <button id="open-trainer-btn" class="mode-pill-btn" type="button">📖 Opening Guide vs AI</button>
+        </div>
+
         <div id="engine-status" class="engine-pill">
           <span class="dot"></span>
           <span id="engine-status-text">Stockfish Ready</span>
@@ -39,10 +44,6 @@
           <option value="13" selected>Standard (Depth 13)</option>
           <option value="16">Deep (Depth 16)</option>
         </select>
-
-        <button id="open-trainer-btn" class="primary-btn trainer-top-btn" type="button">
-          ♞ Practice Openings vs AI
-        </button>
 
         <button id="open-import-btn" class="primary-btn" type="button">
           + Load / Import Game
@@ -109,8 +110,56 @@
         </div>
       </section>
 
-      <!-- Right: Coach Feedback, Eval Graph, Report Card & Q&A -->
+      <!-- Right: Coach Feedback OR Focused Opening Guide -->
       <section class="analysis-column">
+        <!-- FOCUSED OPENING GUIDE VIEW (Shown when "Opening Guide vs AI" is active) -->
+        <div id="trainer-view" class="trainer-focus-view hidden">
+          <div class="trainer-card-top">
+            <div class="trainer-row">
+              <label for="trainer-opening-select">1. Choose Opening:</label>
+              <select id="trainer-opening-select" class="depth-select full-flex"></select>
+            </div>
+
+            <div class="trainer-row">
+              <label for="trainer-mode-select">2. Guide Style:</label>
+              <select id="trainer-mode-select" class="depth-select full-flex">
+                <option value="guided" selected>🟢 Step-by-Step Guide (Auto-Show Arrow on Board)</option>
+                <option value="quiz">🟡 Memory Test (Hide Arrow Until I Click Hint)</option>
+                <option value="free">⚔️ Free Sparring vs AI (Play Any Moves)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Big Clear "WHAT TO DO RIGHT NOW" Instruction Banner -->
+          <div id="guide-prompt-card" class="guide-prompt-card">
+            <div class="guide-step-eyebrow" id="guide-step-eyebrow">STEP 1 OF 6 • YOUR TURN</div>
+            <h2 class="guide-action-title" id="guide-action-title">Play 1. e4 (Pawn e2 → e4)</h2>
+            <p class="guide-action-why" id="guide-action-why">
+              Follow the green arrow on the board! Stakes a claim in the center and opens lines for your Queen and Bishop.
+            </p>
+
+            <div class="guide-btn-bar">
+              <button id="trainer-auto-play-btn" class="primary-btn" type="button">▶ Play Move For Me</button>
+              <button id="trainer-hint-btn" class="ctrl-btn accent-gold" type="button">💡 Show Arrow</button>
+              <button id="trainer-undo-btn" class="ctrl-btn" type="button">↩ Undo</button>
+              <button id="trainer-start-btn" class="ctrl-btn" type="button">↺ Restart</button>
+            </div>
+          </div>
+
+          <!-- Step-by-Step Numbered Roadmap -->
+          <div class="roadmap-card">
+            <div class="roadmap-header">
+              <span id="trainer-title">OPENING MOVE ROADMAP</span>
+              <span id="trainer-progress-label" class="chart-phase">0 / 6 Steps</span>
+            </div>
+            <p id="trainer-desc" class="roadmap-desc"></p>
+            <div id="trainer-roadmap-list" class="roadmap-list"></div>
+            <div id="trainer-line-chips" class="hidden"></div>
+          </div>
+        </div>
+
+        <!-- GAME REVIEW VIEW -->
+        <div id="review-view" class="review-view-wrap">
         <!-- Analysis Progress Bar (shown while analyzing full game) -->
         <div id="analysis-progress-box" class="progress-box hidden">
           <div class="progress-row">
@@ -182,12 +231,11 @@
           <canvas id="eval-chart" width="600" height="96"></canvas>
         </div>
 
-        <!-- Lower Tabs: Report Card | Move List | Ask Coach Q&A | Opening Trainer -->
-        <div class="panel-tabs four-tabs">
+        <!-- Lower Tabs: Report Card | Move List | Ask Coach Q&A -->
+        <div class="panel-tabs">
           <button class="ptab active" data-ptab="report" type="button">Report Card</button>
           <button class="ptab" data-ptab="moves" type="button">Moves List</button>
           <button class="ptab" data-ptab="ask" type="button">Ask Coach Q&amp;A</button>
-          <button class="ptab" data-ptab="trainer" type="button">Opening Trainer</button>
         </div>
 
         <div class="panel-content">
@@ -238,38 +286,7 @@
 
             <div id="ask-log" class="ask-log"></div>
           </div>
-
-          <!-- Tab 4: Practice Openings vs AI -->
-          <div id="ptab-trainer" class="ptab-pane hidden">
-            <div class="trainer-controls">
-              <div class="trainer-row">
-                <label for="trainer-opening-select">Opening Line:</label>
-                <select id="trainer-opening-select" class="depth-select full-flex"></select>
-              </div>
-
-              <div class="trainer-row">
-                <label for="trainer-mode-select">Practice Mode:</label>
-                <select id="trainer-mode-select" class="depth-select full-flex">
-                  <option value="guided">Guided Book Drill → Spar vs AI</option>
-                  <option value="free">Free Opening Sparring vs AI (Any Moves)</option>
-                </select>
-              </div>
-
-              <div class="trainer-btn-row">
-                <button id="trainer-start-btn" class="primary-btn" type="button">▶ Start Practice vs AI</button>
-                <button id="trainer-hint-btn" class="ctrl-btn accent-gold" type="button">💡 Show Book Hint</button>
-                <button id="trainer-undo-btn" class="ctrl-btn" type="button">↩ Takeback</button>
-              </div>
-            </div>
-
-            <div id="trainer-theory-card" class="study-plan-box">
-              <div id="trainer-title" class="study-title">SELECT AN OPENING &amp; CLICK START</div>
-              <p id="trainer-desc" class="deep-text">
-                Practice the main book moves against the AI with live explanation on every move—then continue playing out the middlegame against Stockfish with real-time coaching!
-              </p>
-              <div id="trainer-line-chips" class="trainer-line-chips"></div>
-            </div>
-          </div>
+        </div>
         </div>
       </section>
     </main>
